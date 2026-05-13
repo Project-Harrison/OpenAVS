@@ -1,5 +1,7 @@
 # OpenAVS — Open Autonomous Vessel Simulator
 
+[projectharrison.org](https://www.projectharrison.org/) &nbsp;·&nbsp; [saurabhn.com](https://saurabhn.com/)
+
 ![OpenAVS](assets/images/graphic.png)
 
 ## Scope and limitations
