@@ -164,6 +164,12 @@ def _request_api_key(display, screen, W, H, px):
     rect_save     = pygame.Rect(BTN_SAVE_X, BTN_Y, BTN_W, BTN_H)
     rect_skip     = pygame.Rect(BTN_SKIP_X, BTN_Y, BTN_W, BTN_H)
 
+    try:
+        if not pygame.scrap.get_init():
+            pygame.scrap.init()
+    except Exception:
+        pass
+
     key_text  = ''
     cursor_on = True
     last_blink = time.monotonic()
@@ -190,6 +196,14 @@ def _request_api_key(display, screen, W, H, px):
                 elif ev.key == pygame.K_BACKSPACE:
                     key_text = key_text[:-1]
                     show_error = False
+                elif ev.key == pygame.K_v and (ev.mod & pygame.KMOD_META or ev.mod & pygame.KMOD_CTRL):
+                    try:
+                        clip = pygame.scrap.get_text()
+                        if clip:
+                            key_text += clip.strip()
+                            show_error = False
+                    except Exception:
+                        pass
                 else:
                     if ev.unicode and ev.unicode.isprintable():
                         key_text += ev.unicode
@@ -258,12 +272,9 @@ def _request_api_key(display, screen, W, H, px):
                               rect_skip.centery - t_skip.get_height() // 2))
 
         # attribution
-        t_ph = fn_attr.render('projectharrison.org', True, WHITE)
-        t_sr = fn_attr.render('saurabhn.com',        True, MUTED)
-        _ay2 = H - px(14)
-        _ay1 = _ay2 - t_sr.get_height() - px(8)
-        screen.blit(t_ph, (px(20), _ay1))
-        screen.blit(t_sr, (px(20), _ay2))
+        _fn_attr_dlg = pygame.font.SysFont('helvetica', px(14), bold=True)
+        _at = _fn_attr_dlg.render('projectharrison.org  ·  saurabhn.com', True, (140, 170, 210))
+        screen.blit(_at, (px(14), H - _at.get_height() - px(14)))
 
         display.blit(screen, (0, 0))
         pygame.display.flip()
@@ -584,11 +595,9 @@ def _select_location(display, screen, W, H, px, ports, initial_speed_idx=2):
                          zoom_btn_y + (ZOOM_BTN_H - zv.get_height()) // 2))
 
         # ── footer: attribution ───────────────────────────────────────────────
-        ft_s = fn_attr.render(
-            'projectharrison.org  ·  saurabhn.com',
-            True, WHITE)
-        screen.blit(ft_s, (W // 2 - ft_s.get_width() // 2,
-                           FOOTER_Y - ft_s.get_height() // 2))
+        _fn_attr_loc = pygame.font.SysFont('helvetica', px(14), bold=True)
+        ft_s = _fn_attr_loc.render('projectharrison.org  ·  saurabhn.com', True, (140, 170, 210))
+        screen.blit(ft_s, (px(14), H - ft_s.get_height() - px(14)))
 
         display.blit(screen, (0, 0))
         pygame.display.flip()
@@ -743,7 +752,7 @@ def run(make_sim, speed):
         _L_DONE    = (35,  158, 82)
         _lfont      = pygame.font.SysFont(font, px(12))
         _lfont_hdr  = pygame.font.SysFont(font, px(11), bold=True)
-        _lfont_attr = pygame.font.SysFont(font, px(16))
+        _lfont_attr = pygame.font.SysFont('helvetica', px(14), bold=True)
         _tfont      = pygame.font.SysFont(font, px(16), bold=True)
         _bfont      = pygame.font.SysFont(font, px(40), bold=True)
         BAR_W      = px(440)
@@ -765,9 +774,8 @@ def run(make_sim, speed):
             screen.blit(bn, (W // 2 - bn.get_width() // 2, CARD_Y - px(72)))
             st = _lfont.render('Open Autonomous Vessel Simulator', True, _L_MUTED)
             screen.blit(st, (W // 2 - st.get_width() // 2, CARD_Y - px(28)))
-            _at_s = _lfont_attr.render('projectharrison.org  ·  saurabhn.com', True, _L_MUTED)
-            screen.blit(_at_s, (W // 2 - _at_s.get_width() // 2,
-                                H - _at_s.get_height() - px(14)))
+            _at_s = _lfont_attr.render('projectharrison.org  ·  saurabhn.com', True, (140, 170, 210))
+            screen.blit(_at_s, (px(14), H - _at_s.get_height() - px(14)))
 
             # card background
             pygame.draw.rect(screen, _L_CARD,
@@ -1136,14 +1144,9 @@ def run(make_sim, speed):
             blit_backed(f['sm'].render(lat_lbl, True, lightGrey), (px(940), px(385)))
             blit_backed(f['sm'].render(lon_lbl, True, lightGrey), (px(510), px(785)))
 
-            _f_mkt  = pygame.font.SysFont(font, max(20, px(28)), bold=True)
-            _s_ph   = _f_mkt.render('projectharrison.org', True, (10, 10, 10))
-            _s_sr   = _f_mkt.render('saurabhn.com',        True, (10, 10, 10))
-            _mkt_x  = px(14)
-            _mkt_y2 = H - px(14)
-            _mkt_y1 = _mkt_y2 - _s_sr.get_height() - px(44)
-            screen.blit(_s_ph, (_mkt_x, _mkt_y1))
-            screen.blit(_s_sr, (_mkt_x, _mkt_y2 - _s_sr.get_height()))
+            _f_mkt  = pygame.font.SysFont('helvetica', px(14), bold=True)
+            _s_mkt  = _f_mkt.render('projectharrison.org  ·  saurabhn.com', True, (60, 60, 72))
+            screen.blit(_s_mkt, (px(14), H - _s_mkt.get_height() - px(14)))
             pygame.draw.rect(screen, SB_BG, (SB_START, 0, W - SB_START, H))
             pygame.draw.aaline(screen, SB_BORDER, (SB_START, 0), (SB_START, H))
 
