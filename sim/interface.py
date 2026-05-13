@@ -143,6 +143,7 @@ def _select_location(display, screen, W, H, px, ports, initial_speed_idx=2):
     fn_input = pygame.font.SysFont('helvetica', px(14))
     fn_hdr   = pygame.font.SysFont('helvetica', px(11), bold=True)
     fn_key   = pygame.font.SysFont('helvetica', px(12))
+    fn_attr  = pygame.font.SysFont('helvetica', px(30), bold=True)
 
     _SPEED_LABELS_LOC = ['¼×', '½×', '1×', '2×', '4×', '8×']
     _speed_idx = initial_speed_idx
@@ -424,9 +425,9 @@ def _select_location(display, screen, W, H, px, ports, initial_speed_idx=2):
                          zoom_btn_y + (ZOOM_BTN_H - zv.get_height()) // 2))
 
         # ── footer: attribution ───────────────────────────────────────────────
-        ft_s = fn_sub.render(
-            'projectharrison.org  ·  powered by saurabhn.com',
-            True, MUTED)
+        ft_s = fn_attr.render(
+            'projectharrison.org  ·  saurabhn.com',
+            True, WHITE)
         screen.blit(ft_s, (W // 2 - ft_s.get_width() // 2,
                            FOOTER_Y - ft_s.get_height() // 2))
 
@@ -576,10 +577,11 @@ def run(make_sim, speed):
         _L_MUTED   = (88,  118, 162)
         _L_BAR_BG  = (32,  48,  80)
         _L_DONE    = (35,  158, 82)
-        _lfont     = pygame.font.SysFont(font, px(12))
-        _lfont_hdr = pygame.font.SysFont(font, px(11), bold=True)
-        _tfont     = pygame.font.SysFont(font, px(16), bold=True)
-        _bfont     = pygame.font.SysFont(font, px(40), bold=True)
+        _lfont      = pygame.font.SysFont(font, px(12))
+        _lfont_hdr  = pygame.font.SysFont(font, px(11), bold=True)
+        _lfont_attr = pygame.font.SysFont(font, px(16))
+        _tfont      = pygame.font.SysFont(font, px(16), bold=True)
+        _bfont      = pygame.font.SysFont(font, px(40), bold=True)
         BAR_W      = px(440)
         BAR_H      = px(10)
         CARD_W     = BAR_W + px(64)
@@ -599,6 +601,9 @@ def run(make_sim, speed):
             screen.blit(bn, (W // 2 - bn.get_width() // 2, CARD_Y - px(72)))
             st = _lfont.render('Open Autonomous Vessel Simulator', True, _L_MUTED)
             screen.blit(st, (W // 2 - st.get_width() // 2, CARD_Y - px(28)))
+            _at_s = _lfont_attr.render('projectharrison.org  ·  saurabhn.com', True, _L_MUTED)
+            screen.blit(_at_s, (W // 2 - _at_s.get_width() // 2,
+                                H - _at_s.get_height() - px(14)))
 
             # card background
             pygame.draw.rect(screen, _L_CARD,
@@ -731,6 +736,7 @@ def run(make_sim, speed):
         _n_total = max(len(_all_av), 1)
         live_ais   = []
         static_ais = []
+        docked_ais = []
         _draw_loading('Ready', 1.0, 'Scanning…', 0.0)
         for _i, _av in enumerate(_all_av):
             if _i % max(1, _n_total // 60) == 0:
@@ -805,6 +811,14 @@ def run(make_sim, speed):
         _draw_loading('Ready', 1.0, _scan_done, 1.0,
                       f'Graph: {len(_G)} nodes', 0.10)
 
+        # Snap ownship to the nearest verified sea graph node — more reliable
+        # than the pixel-centroid, which can land on a thin land strip.
+        _snap = _graph_module.find_nearest_sea_node(
+            controlBot.p1[0], controlBot.p1[1], _G_lats, _G_lons, _G)
+        if _snap:
+            controlBot.p1 = _graph_module.node_to_latlon(
+                _snap[0], _snap[1], _G_lats, _G_lons)
+
         # ── Assign A* routes + behavior state to each live AIS vessel ─────────
         _n_rv = max(len(live_ais), 1)
 
@@ -835,6 +849,7 @@ def run(make_sim, speed):
             la['random_alter_until'] = 0.0
             la['next_random_check']  = time.monotonic() + random.uniform(5, 45)
             la['max_turn_rate']      = 8.0  # deg / sim-tick
+            la['shore_hits']         = 0
 
         with _PoolEx(max_workers=8) as _rv_ex:
             _rv_futs = [_rv_ex.submit(_init_vessel_route, la) for la in live_ais]
@@ -859,6 +874,7 @@ def run(make_sim, speed):
         _strtree         = None
         _strtree_t       = 0.0   # wall-clock time of last STRtree rebuild
         _cpa_behavior_t  = 0.0   # wall-clock time of last behavior CPA run
+        _ctrl_docked     = False
 
         # ── inner helpers (re-created each restart so closures see new vars) ──
 
@@ -948,9 +964,14 @@ def run(make_sim, speed):
             blit_backed(f['sm'].render(lat_lbl, True, lightGrey), (px(940), px(385)))
             blit_backed(f['sm'].render(lon_lbl, True, lightGrey), (px(510), px(785)))
 
-            _attr = f['sm'].render(
-                'projectharrison.org  ·  powered by saurabhn.com', True, (180, 190, 210))
-            screen.blit(_attr, (px(10), H - _attr.get_height() - px(8)))
+            _f_mkt  = pygame.font.SysFont(font, max(20, px(28)), bold=True)
+            _s_ph   = _f_mkt.render('projectharrison.org', True, (10, 10, 10))
+            _s_sr   = _f_mkt.render('saurabhn.com',        True, (10, 10, 10))
+            _mkt_x  = px(14)
+            _mkt_y2 = H - px(14)
+            _mkt_y1 = _mkt_y2 - _s_sr.get_height() - px(44)
+            screen.blit(_s_ph, (_mkt_x, _mkt_y1))
+            screen.blit(_s_sr, (_mkt_x, _mkt_y2 - _s_sr.get_height()))
             pygame.draw.rect(screen, SB_BG, (SB_START, 0, W - SB_START, H))
             pygame.draw.aaline(screen, SB_BORDER, (SB_START, 0), (SB_START, H))
 
@@ -983,8 +1004,19 @@ def run(make_sim, speed):
                                 (px(15), px(20)))
 
                     displayVessel(int(coord[0]), int(coord[1]), vessel)
-                    if vessel.behavior: vessel.behavior.go(vessel)
-                    vessel.advance(vessel)
+                    if vessel is controlBot:
+                        _nxt = navigation.arrival(
+                            vessel.p1, vessel.course,
+                            vessel.speed * (vessel.interval / 60))
+                        if _chart_is_sea(_nxt[0], _nxt[1]):
+                            _ctrl_docked = False
+                            if vessel.behavior: vessel.behavior.go(vessel)
+                            vessel.advance(vessel)
+                        else:
+                            _ctrl_docked = True
+                    else:
+                        if vessel.behavior: vessel.behavior.go(vessel)
+                        vessel.advance(vessel)
 
                 # ── behavior engine (STRtree CPA + random captain, 1 Hz) ─────
                 _now_rt = time.monotonic()
@@ -1088,9 +1120,11 @@ def run(make_sim, speed):
                         _intended = (_net + la.get('traffic_alter_deg', 0)) % 360
 
                     # 3 — Shore guard: cascade of fallbacks before going static
+                    _shore_guard_fired = False
                     _nxt_pos = navigation.arrival(
                         la['pos'], _intended, la['speed'] / 60)
                     if not _chart_is_sea(_nxt_pos[0], _nxt_pos[1]):
+                        _shore_guard_fired = True
                         _intended = _net
                         _nxt_pos  = navigation.arrival(
                             la['pos'], _intended, la['speed'] / 60)
@@ -1126,6 +1160,7 @@ def run(make_sim, speed):
                                     if _sg_found:
                                         break
                             if not _sg_found:
+                                la['shore_hits'] += 1
                                 # Count open 45° cardinal directions
                                 _sg_open = sum(
                                     1 for _h in range(8)
@@ -1155,17 +1190,22 @@ def run(make_sim, speed):
 
                     # 6 — Advance position using actual heading (not bias)
                     if _chart_is_sea(_nxt_pos[0], _nxt_pos[1]):
+                        if not _shore_guard_fired:
+                            la['shore_hits'] = 0
                         la['pos']    = _nxt_pos
                         la['minute'] = (la['minute'] + 1) % 60
                         _still_moving.append(la)
                     else:
-                        static_ais.append({
-                            'lat':           la['pos'][0],
-                            'lon':           la['pos'][1],
-                            'is_sanctioned': la['is_sanctioned'],
-                            'name':          la['name'],
-                            'speed':         0,
-                        })
+                        if la['shore_hits'] >= 8:
+                            docked_ais.append({
+                                'lat':           la['pos'][0],
+                                'lon':           la['pos'][1],
+                                'heading':       la.get('heading', la['course']),
+                                'is_sanctioned': la['is_sanctioned'],
+                                'name':          la['name'],
+                            })
+                        else:
+                            _still_moving.append(la)
                 live_ais[:] = _still_moving
                 _cpa_tick += 1
                 if _cpa_tick % 30 == 0:
@@ -1185,19 +1225,42 @@ def run(make_sim, speed):
                         pygame.draw.circle(screen, dot_col, (ax, ay), max(3, px(3)))
                         pygame.draw.circle(screen, rim_col, (ax, ay), max(3, px(3)), 1)
 
+                # AIS contacts — docked (hit shore repeatedly — static yellow line, bow-to-stern)
+                for dv in docked_ais:
+                    ax, ay = navigation.interfacePosition(
+                        origin, (dv['lat'], dv['lon']), OX, OY, NS)
+                    ax, ay = int(ax), int(ay)
+                    if 0 <= ax < CHART_W and 0 <= ay < H:
+                        _hl    = max(8, px(10))
+                        _hdg_r = math.radians(dv['heading'])
+                        _dx    = math.sin(_hdg_r) * _hl
+                        _dy    = -math.cos(_hdg_r) * _hl
+                        _col   = (220, 50, 50) if dv['is_sanctioned'] else AIS_COLOR
+                        pygame.draw.line(screen, _col,
+                            (int(ax - _dx), int(ay + _dy)),
+                            (int(ax + _dx), int(ay - _dy)),
+                            max(2, px(2)))
+
                 # AIS contacts — live (speed > 3 kts, dead-reckoned each tick) — trail dots
                 for la in live_ais:
                     ax, ay = navigation.interfacePosition(
                         origin, la['pos'], OX, OY, NS)
                     ax, ay = int(ax), int(ay)
                     if 0 <= ax < CHART_W and 0 <= ay < H:
-                        dot_col = (220, 50, 50) if la['is_sanctioned'] else (255, 150, 190)
+                        dot_col = (220, 50, 50) if la['is_sanctioned'] else (30, 60, 140)
                         if la['minute'] % 6 == 0:
                             pygame.draw.circle(screen, dot_col, (ax, ay), max(2, px(2)))
                         else:
                             pygame.draw.circle(screen, lightGrey, (ax, ay), max(1, px(1)))
 
                 display.blit(screen, (0, 0))
+                # crosshair through ownship — drawn to display so it never accumulates
+                _ucx, _ucy = navigation.interfacePosition(
+                    origin, controlBot.p1, OX, OY, NS)
+                _ucx, _ucy = int(_ucx), int(_ucy)
+                if 0 <= _ucx < CHART_W and 0 <= _ucy < H:
+                    pygame.draw.line(display, YOU_ACCENT, (0, _ucy), (CHART_W, _ucy), 1)
+                    pygame.draw.line(display, YOU_ACCENT, (_ucx, 0), (_ucx, H), 1)
                 # leading-point circles drawn to display only — never accumulate on screen trail
                 for vessel in args:
                     cx, cy = navigation.interfacePosition(
@@ -1212,7 +1275,7 @@ def run(make_sim, speed):
                         origin, la['pos'], OX, OY, NS)
                     cx, cy = int(cx), int(cy)
                     if 0 <= cx < CHART_W and 0 <= cy < H:
-                        dot_col = (220, 50, 50) if la['is_sanctioned'] else (255, 150, 190)
+                        dot_col = (220, 50, 50) if la['is_sanctioned'] else (30, 60, 140)
                         pygame.draw.circle(display, (255, 255, 255), (cx, cy), max(4, px(4)))
                         pygame.draw.circle(display, dot_col,         (cx, cy), max(3, px(3)))
                 pygame.display.flip()
@@ -1259,8 +1322,12 @@ def run(make_sim, speed):
                     y += ROW_H
 
                 y += px(5)
-                status_label = 'PAUSED' if paused else 'RUNNING'
-                status_color = CPA_WARN if paused else (35, 140, 55)
+                if paused:
+                    status_label, status_color = 'PAUSED', CPA_WARN
+                elif _ctrl_docked:
+                    status_label, status_color = 'DOCKED', (90, 130, 180)
+                else:
+                    status_label, status_color = 'RUNNING', (35, 140, 55)
                 screen.blit(f['sm'].render('STATUS', True, MUTED),
                             (SB_L + px(4), y))
                 screen.blit(f['hdr'].render(status_label, True, status_color),
@@ -1371,7 +1438,7 @@ def run(make_sim, speed):
                     y += px(14)
                     y = draw_divider(f, y)
                     for la in _display_ais:
-                        ais_col = (220, 50, 50) if la['is_sanctioned'] else (255, 150, 190)
+                        ais_col = (220, 50, 50) if la['is_sanctioned'] else (30, 60, 140)
                         if _calculating:
                             cpa_str  = '— NM'
                             tcpa_str = 'Calculating…'
@@ -1430,9 +1497,11 @@ def run(make_sim, speed):
 
                 # ── back button ───────────────────────────────────────────────
                 mx, my = pygame.mouse.get_pos()
-                hover  = BACK_BTN.collidepoint(mx, my)
-                btn_col = YOU_ACCENT if hover else (90, 95, 108)
+                hover   = BACK_BTN.collidepoint(mx, my)
+                btn_col = (30, 125, 255) if hover else YOU_ACCENT
                 pygame.draw.rect(screen, btn_col, BACK_BTN, border_radius=px(4))
+                pygame.draw.rect(screen, (120, 180, 255), BACK_BTN,
+                                 width=1, border_radius=px(4))
                 # small left arrow polygon inside button
                 as_ = max(4, px(4))
                 ax  = BACK_BTN.x + px(10)
@@ -1442,7 +1511,7 @@ def run(make_sim, speed):
                     (ax + as_,  ay - as_ // 2),
                     (ax + as_,  ay + as_ // 2),
                 ])
-                lbl = f['sm'].render('Area Selection', True, (255, 255, 255))
+                lbl = f['hdr'].render('Area Selection', True, (255, 255, 255))
                 screen.blit(lbl, (ax + as_ + px(7),
                                   BACK_BTN.centery - lbl.get_height() // 2))
 

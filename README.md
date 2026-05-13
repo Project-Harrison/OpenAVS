@@ -1,32 +1,6 @@
-
----
-
 # OpenAVS — Open Autonomous Vessel Simulator
 
-A simulator for Maritime Autonomous Surface Ships (MASS).
-Loads real AIS positions for a chosen port, runs the surrounding traffic as autonomous vessels on a routing graph, and lets you take manual control of one vessel.
-
-## What it does
-
-1. Downloads recent terrestrial AIS positions for a selected area, when available.
-2. Loads a minimal tileset of navigational information (shoreline, geofence, marks).
-3. Generates a routing graph constrained to the sea area outside the shoreline.
-4. Runs other vessels as autonomous agents on that graph, with CPA-based collision avoidance.
-5. Lets you pilot one vessel manually through the same environment.
-
-## Who it's for
-
-Shows what traffic density at a working port actually looks like.
-
-A starting point for experimenting with autonomous vessel behavior in a real geographic context.
-
-
-## How it works
-
-Each autonomous vessel follows a grid network built inside the sea polygon, with edges weighted by distance to open water.
-Vessels react to nearby traffic using CPA/TCPA calculations and alter to starboard when a threat is detected.
-A second layer adds small random course changes to approximate real-world helm behavior.
-The manually controlled vessel uses the same physics and operates in the same environment as the autonomous ones.
+![OpenAVS](assets/images/graphic.png)
 
 ## Scope and limitations
 
@@ -44,8 +18,12 @@ uv sync
 
 ### 2 — Download the coastline shapefile
 
-`assets/shapefiles/World/goas_v01.shp` (122 MB) is not stored in git. Download the VLIZ Global Oceans and Seas v1.0 shapefile and place all component files in `assets/shapefiles/World/`:
+`assets/shapefiles/World/goas_v01.shp` (122 MB) is not stored in git. Place all component files in `assets/shapefiles/World/`.
 
+**Direct download (Google Drive):**
+[goas_v01.shp — Google Drive](https://drive.google.com/file/d/1REG5RmNcl64ePzusIEkyER1PYBPAsYGT/view?usp=sharing)
+
+**Original source (VLIZ Global Oceans and Seas v1.0):**
 ```
 https://www.vliz.be/en/imis?dasid=5168
 ```
@@ -167,7 +145,7 @@ X-API-Key: <SAURAHBN_AIS>
 |---|---|---|
 | Sanctioned | Red | Static dot at reported position |
 | Speed ≤ 5 kts | Amber | Static dot — anchored/moored |
-| Speed > 5 kts | Pink | **Dead-reckoned** — advances each sim tick |
+| Speed > 5 kts | Dark blue | **Dead-reckoned** — advances each sim tick |
 
 Vessels with speed > 5 kts are extracted into the `live_ais` list. Every sim tick they advance one minute using the navigation engine and the multi-layer behavior system described below. Their trail dots accumulate on `screen`; the leading dot is drawn to `display` (ephemeral, never accumulates).
 
@@ -175,7 +153,7 @@ Vessels with speed > 5 kts are extracted into the `live_ais` list. Every sim tic
 
 Each live vessel leaves a dot every simulation tick:
 
-- **Every 6 minutes** — colored dot (pink or red) at 2px
+- **Every 6 minutes** — colored dot (dark blue or red) at 2px
 - **All other ticks** — 1px grey dot
 
 ---
@@ -356,7 +334,7 @@ ShipSimulator/
 ├── capture.py                 # Headless screenshot renderer (splash / loading / main)
 ├── data/
 │   ├── layer.geojson          # NGA worldwide navigation lights (11,381 features)
-│   └── ports.json             # World port database (~4,700 unique ports with lat/lon)
+│   └── ports.json             # World port database (~4,700 unique ports) — github.com/tayljordan/ports
 ├── assets/
 │   ├── images/m.png           # Window / dock icon
 │   ├── shapefiles/World/      # VLIZ GOAS v1.0 shapefile (download separately — 122 MB)
