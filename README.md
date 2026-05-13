@@ -43,13 +43,9 @@ Required files: `goas_v01.shp`, `goas_v01.shx`, `goas_v01.dbf`, `goas_v01.prj`, 
 
 ### 3 — Set API key
 
-Requires one environment variable:
+On first launch, if no key is found, a dialog prompts for the key before the port picker opens. You can also update the key at any time using the **AIS Key** button in the simulation sidebar (green dot = configured, red dot = missing).
 
-```
-SAURAHBN_AIS=sdr_live_…        # Saurabhn AIS API key
-```
-
-The key is read from the environment, or automatically from `../react/.env` if present.
+The key is saved to `~/Library/Application Support/OpenAVS/config.json` and read on every subsequent launch. It can also be set via the `SAURAHBN_AIS` environment variable or placed in `../react/.env`.
 
 ### 4 — Run
 
@@ -91,17 +87,13 @@ This will:
 
 ### AIS key for bundled app
 
-The app cannot read environment variables or `.env` files when launched from the Dock. Create a config file once:
+On first launch, if no key is found, a dialog prompts for it automatically. Enter your Saurabhn key and click **Save & Continue** — it is written to:
 
 ```
 ~/Library/Application Support/OpenAVS/config.json
 ```
 
-```json
-{ "SAURAHBN_AIS": "your_key_here" }
-```
-
-The app checks this file at startup. Without it, the simulation runs without live AIS — autonomous vessels will not appear.
+You can update the key at any time via the **AIS Key** button in the simulation sidebar (bottom-right, above the Area Selection button). A green dot means a key is configured; red means it is missing. Without a key the simulation runs but live AIS vessels do not appear.
 
 ### Writable data (tile cache, vessel stream)
 
@@ -368,7 +360,8 @@ Redrawn every simulation tick. Sections top-to-bottom:
 2. **Status** — `RUNNING` (green) / `PAUSED` (red)
 3. **Vessel cards** (up to 3) — position, course, speed, CPA/TCPA per vessel pair. Player vessel highlighted with blue accent bar and `YOU` badge. CPA values turn red below 1.0 nm
 4. **AIS Contacts** — live AIS vessels within 25 nm of TargetBot, sorted by CPA (closest first). Shows vessel name, CPA distance, and TCPA in minutes. Shows placeholder cards with `Calculating…` until the first CPA compute cycle (30 ticks). CPA turns red below 1.0 nm
-5. **Area Selection button** — returns to port search without restarting pygame
+5. **AIS Key button** — opens the API key entry dialog; green dot = key configured, red dot = missing. Triggers an immediate AIS re-fetch after saving
+6. **Area Selection button** — returns to port search without restarting pygame
 
 ---
 

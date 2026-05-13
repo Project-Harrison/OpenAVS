@@ -124,6 +124,164 @@ def _recenter_on_water(surf, origin, NS, OX, OY, CHART_W, H, max_frac=0.45):
     return (origin[0] + dlat, origin[1] + dlon)
 
 
+# ── API key dialog ────────────────────────────────────────────────────────────
+
+def _request_api_key(display, screen, W, H, px):
+    BG      = (14,  20,  38)
+    CARD    = (22,  32,  58)
+    CARD_BD = (42,  62,  100)
+    ACCENT  = (40,  150, 225)
+    WHITE   = (230, 240, 255)
+    MUTED   = (95,  125, 165)
+    INP_BG  = (28,  42,  68)
+    INP_BD  = (60,  90,  140)
+    ERR_COL = (220, 80,  80)
+
+    fn_title = pygame.font.SysFont('helvetica', px(28), bold=True)
+    fn_sub   = pygame.font.SysFont('helvetica', px(12))
+    fn_inp   = pygame.font.SysFont('helvetica', px(14))
+    fn_btn   = pygame.font.SysFont('helvetica', px(13), bold=True)
+    fn_attr  = pygame.font.SysFont('helvetica', px(30), bold=True)
+
+    CARD_W  = min(px(520), W - px(80))
+    CARD_H  = px(300)
+    CARD_X  = (W - CARD_W) // 2
+    CARD_Y  = (H - CARD_H) // 2
+
+    INP_PAD  = px(20)
+    INP_X    = CARD_X + INP_PAD
+    INP_W    = CARD_W - 2 * INP_PAD
+    INP_H    = px(42)
+    INP_Y    = CARD_Y + px(130)
+
+    BTN_W   = (INP_W - px(12)) // 2
+    BTN_H   = px(40)
+    BTN_Y   = INP_Y + INP_H + px(20)
+    BTN_SAVE_X = INP_X
+    BTN_SKIP_X = INP_X + BTN_W + px(12)
+
+    rect_inp      = pygame.Rect(INP_X, INP_Y, INP_W, INP_H)
+    rect_save     = pygame.Rect(BTN_SAVE_X, BTN_Y, BTN_W, BTN_H)
+    rect_skip     = pygame.Rect(BTN_SKIP_X, BTN_Y, BTN_W, BTN_H)
+
+    key_text  = ''
+    cursor_on = True
+    last_blink = time.monotonic()
+    show_error = False
+    active     = True
+
+    while active:
+        dt = time.monotonic()
+        if dt - last_blink > 0.55:
+            cursor_on  = not cursor_on
+            last_blink = dt
+
+        for ev in pygame.event.get():
+            if ev.type == pygame.QUIT:
+                pygame.quit()
+                raise SystemExit
+            elif ev.type == pygame.KEYDOWN:
+                if ev.key == pygame.K_RETURN:
+                    if key_text.strip():
+                        _save_api_key(key_text.strip())
+                    active = False
+                elif ev.key == pygame.K_ESCAPE:
+                    active = False
+                elif ev.key == pygame.K_BACKSPACE:
+                    key_text = key_text[:-1]
+                    show_error = False
+                else:
+                    if ev.unicode and ev.unicode.isprintable():
+                        key_text += ev.unicode
+                        show_error = False
+            elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                mx, my = ev.pos
+                if rect_save.collidepoint(mx, my):
+                    if key_text.strip():
+                        _save_api_key(key_text.strip())
+                        active = False
+                    else:
+                        show_error = True
+                elif rect_skip.collidepoint(mx, my):
+                    active = False
+
+        screen.fill(BG)
+
+        # card
+        pygame.draw.rect(screen, CARD,    pygame.Rect(CARD_X, CARD_Y, CARD_W, CARD_H), border_radius=px(10))
+        pygame.draw.rect(screen, CARD_BD, pygame.Rect(CARD_X, CARD_Y, CARD_W, CARD_H), width=1, border_radius=px(10))
+
+        # title
+        t_title = fn_title.render('AIS API Key', True, WHITE)
+        screen.blit(t_title, (CARD_X + (CARD_W - t_title.get_width()) // 2, CARD_Y + px(28)))
+
+        # subtitle
+        lines = [
+            'Live AIS vessel data requires a Saurabhn API key.',
+            'Get yours free at  saurabhn.com',
+        ]
+        for i, ln in enumerate(lines):
+            ts = fn_sub.render(ln, True, MUTED)
+            screen.blit(ts, (CARD_X + (CARD_W - ts.get_width()) // 2, CARD_Y + px(72) + i * px(18)))
+
+        # input box
+        inp_col = ERR_COL if show_error else (ACCENT if rect_inp.collidepoint(pygame.mouse.get_pos()) else INP_BD)
+        pygame.draw.rect(screen, INP_BG,  rect_inp, border_radius=px(6))
+        pygame.draw.rect(screen, inp_col, rect_inp, width=2, border_radius=px(6))
+
+        display_text = key_text + ('|' if cursor_on else ' ')
+        t_key = fn_inp.render(display_text or ' ', True, WHITE)
+        screen.blit(t_key, (rect_inp.x + px(10), rect_inp.y + (INP_H - t_key.get_height()) // 2))
+
+        if not key_text:
+            t_ph = fn_inp.render('Paste your API key here…', True, MUTED)
+            screen.blit(t_ph, (rect_inp.x + px(10), rect_inp.y + (INP_H - t_ph.get_height()) // 2))
+
+        if show_error:
+            t_err = fn_sub.render('Please enter a key or click Skip.', True, ERR_COL)
+            screen.blit(t_err, (INP_X, BTN_Y - px(16)))
+
+        # Save button
+        mx, my = pygame.mouse.get_pos()
+        save_col = (60, 170, 255) if rect_save.collidepoint(mx, my) else ACCENT
+        pygame.draw.rect(screen, save_col, rect_save, border_radius=px(6))
+        t_save = fn_btn.render('Save & Continue', True, (255, 255, 255))
+        screen.blit(t_save, (rect_save.centerx - t_save.get_width() // 2,
+                              rect_save.centery - t_save.get_height() // 2))
+
+        # Skip button
+        skip_col = (38, 56, 88) if rect_skip.collidepoint(mx, my) else (28, 42, 68)
+        pygame.draw.rect(screen, skip_col, rect_skip, border_radius=px(6))
+        pygame.draw.rect(screen, CARD_BD,  rect_skip, width=1, border_radius=px(6))
+        t_skip = fn_btn.render('Skip for now', True, MUTED)
+        screen.blit(t_skip, (rect_skip.centerx - t_skip.get_width() // 2,
+                              rect_skip.centery - t_skip.get_height() // 2))
+
+        # attribution
+        t_ph = fn_attr.render('projectharrison.org', True, WHITE)
+        t_sr = fn_attr.render('saurabhn.com',        True, MUTED)
+        _ay2 = H - px(14)
+        _ay1 = _ay2 - t_sr.get_height() - px(8)
+        screen.blit(t_ph, (px(20), _ay1))
+        screen.blit(t_sr, (px(20), _ay2))
+
+        display.blit(screen, (0, 0))
+        pygame.display.flip()
+
+
+def _save_api_key(key: str) -> None:
+    path = _paths.config_path()
+    try:
+        with open(path) as fh:
+            cfg = json.load(fh)
+    except Exception:
+        cfg = {}
+    cfg['SAURAHBN_AIS'] = key
+    with open(path, 'w') as fh:
+        json.dump(cfg, fh, indent=2)
+    print(f'  [ais] API key saved to {path}')
+
+
 # ── location picker ───────────────────────────────────────────────────────────
 
 def _select_location(display, screen, W, H, px, ports, initial_speed_idx=2):
@@ -498,10 +656,15 @@ def run(make_sim, speed):
 
     ports  = _load_ports(_paths.asset('data/ports.json'))
 
+    if not ais_vessels._load_token():
+        _request_api_key(display, screen, W, H, px)
 
     # ── back-button rect (bottom of sidebar, computed once) ───────────────────
-    BACK_BTN = pygame.Rect(SB_L - px(6), H - px(44),
-                            SB_R - SB_L + px(12), px(32))
+    BACK_BTN    = pygame.Rect(SB_L - px(6), H - px(44),
+                               SB_R - SB_L + px(12), px(32))
+    AIS_KEY_BTN = pygame.Rect(SB_L - px(6), H - px(82),
+                               SB_R - SB_L + px(12), px(28))
+    _ais_configured = bool(ais_vessels._load_token())
 
     # ── arrow drawing helpers ─────────────────────────────────────────────────
     def draw_lr_arrows(x, y, color):
@@ -913,7 +1076,7 @@ def run(make_sim, speed):
         AIS_COLOR = (255, 200, 60)
 
         def handle_event(ev):
-            nonlocal running, paused, want_restart, _speed_idx
+            nonlocal running, paused, want_restart, _speed_idx, _ais_configured
             if ev.type == pygame.QUIT:
                 running = False
             elif ev.type == pygame.KEYDOWN:
@@ -934,6 +1097,14 @@ def run(make_sim, speed):
                 if BACK_BTN.collidepoint(ev.pos):
                     want_restart = True
                     running = False
+                elif AIS_KEY_BTN.collidepoint(ev.pos):
+                    _request_api_key(display, screen, W, H, px)
+                    _ais_configured = bool(ais_vessels._load_token())
+                    if _ais_configured:
+                        ais_vessels.fetch_async(
+                            _lat_min_vp, _lat_max_vp,
+                            _lon_min_vp, _lon_max_vp,
+                        )
 
         def tick_delay(ms):
             remaining = max(ms, 0)
@@ -1496,8 +1667,22 @@ def run(make_sim, speed):
 
                         y = row_y + px(10)
 
-                # ── back button ───────────────────────────────────────────────
+                # ── AIS key button ────────────────────────────────────────────
                 mx, my = pygame.mouse.get_pos()
+                ais_hover = AIS_KEY_BTN.collidepoint(mx, my)
+                _ais_bg   = (50, 80, 140) if ais_hover else (38, 60, 110)
+                pygame.draw.rect(screen, _ais_bg, AIS_KEY_BTN, border_radius=px(4))
+                pygame.draw.rect(screen, (80, 110, 170), AIS_KEY_BTN,
+                                 width=1, border_radius=px(4))
+                _dot_col = (60, 210, 100) if _ais_configured else (200, 70, 70)
+                pygame.draw.circle(screen, _dot_col,
+                                   (AIS_KEY_BTN.x + px(12), AIS_KEY_BTN.centery),
+                                   max(4, px(4)))
+                _lbl_ais = f['sm'].render('AIS Key', True, (200, 225, 255))
+                screen.blit(_lbl_ais, (AIS_KEY_BTN.x + px(22),
+                                       AIS_KEY_BTN.centery - _lbl_ais.get_height() // 2))
+
+                # ── back button ───────────────────────────────────────────────
                 hover   = BACK_BTN.collidepoint(mx, my)
                 btn_col = (30, 125, 255) if hover else YOU_ACCENT
                 pygame.draw.rect(screen, btn_col, BACK_BTN, border_radius=px(4))
