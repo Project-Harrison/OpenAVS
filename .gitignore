@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime
+database/stream
+
+# Tile cache (downloaded on demand at startup)
+assets/tile_cache/
+
+# Large GIS data — 122 MB, exceeds GitHub limit
+# Download from: https://www.vliz.be/en/imis?dasid=5168
+assets/shapefiles/World/goas_v01.shp
+
+# Screenshots
+screenshots/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+
+# Reference docs
+docs/
+
+# Local dev
+.claude/
+.notes
