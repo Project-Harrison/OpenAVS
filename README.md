@@ -12,7 +12,10 @@
 
 ## Scope and limitations
 
-This is an early implementation intended to demonstrate the idea, not to model any specific autonomy stack or comply with COLREGS in full. Behavior is approximate: avoidance is starboard-only rather than rule-aware, vessel dynamics are simplified, and AIS data is used as a snapshot rather than a live feed. It is not suitable for training, navigation, or operational use.
+Simulator that converts real-time AIS derived vessels into MASS vessels.
+Autonomy is done through network graphs, which very approximately matches incipient MASS efforts.
+User is able to control own vessel. 
+Just a fun project with no particular goal in mind.
 
 ---
 
