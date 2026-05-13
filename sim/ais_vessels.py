@@ -5,10 +5,12 @@ AIS overlay — Saurabhn bbox endpoint:
   Auth: X-API-Key (SAURAHBN_AIS env var or ../react/.env)
 Capped at 2000 results per query — use exact viewport bounds.
 """
+import json
 import os
 import threading
 import requests
 from typing import List, Dict, Any
+from . import paths as _paths
 
 _BASE_URL = 'https://api.saurabhn.com/v1/positions/latest'
 _TIMEOUT  = 12
@@ -33,6 +35,11 @@ def _load_token() -> str:
                     return line.split('=', 1)[1].strip()
     except Exception as e:
         print(f'  [ais] could not read {env_path}: {e}')
+    try:
+        with open(_paths.config_path()) as fh:
+            return json.load(fh).get('SAURAHBN_AIS', '')
+    except Exception:
+        pass
     return ''
 
 

@@ -1,5 +1,6 @@
 import string, random
 from copy import deepcopy
+from . import paths as _paths
 
 import datetime
 
@@ -10,7 +11,7 @@ schema = 'voyage_id, name, time, lat, long, course, speed, offset, interval'
 def writeToDatabase(vessel):
     row = vessel.voyage +','+ vessel.name +','+ str(vessel.date) +','+ str(vessel.p1[0]) +','+\
           str(vessel.p1[1]) +','+ str(vessel.course) +','+ str(vessel.speed)
-    with open('database/stream', 'a') as write_obj:
+    with open(_paths.stream_path(), 'a') as write_obj:
         write_obj.write(row)
         write_obj.write('\n')
         pass

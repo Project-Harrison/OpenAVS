@@ -1,4 +1,5 @@
 from . import navigation
+from . import paths as _paths
 import datetime
 from . import supporting
 from csv import reader
@@ -62,7 +63,7 @@ class Vessel:
 
     def aware(self):
 
-        fileExtension = 'database/stream'
+        fileExtension = _paths.stream_path()
         try:
             numberOfBots = len(self.allVessels)
         except:
@@ -141,7 +142,7 @@ class Vessel:
         row = self.voyage + ',' + self.name + ',' + str(self.date) + ',' + str(self.p1[0]) + ',' + \
               str(self.p1[1]) + ',' + str(self.course) + ',' + str(self.speed) + '\n'
 
-        with open('database/stream', 'a') as write_obj:
+        with open(_paths.stream_path(), 'a') as write_obj:
             write_obj.write(row)
             pass
 

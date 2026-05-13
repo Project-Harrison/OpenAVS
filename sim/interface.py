@@ -7,6 +7,7 @@ from . import navigation
 from . import tiles
 from . import ais_vessels
 from . import graph as _graph_module
+from . import paths as _paths
 from shapely.geometry import Point as _ShapePoint
 from shapely.strtree import STRtree as _ShapeSTRtree
 import pygame
@@ -489,13 +490,13 @@ def run(make_sim, speed):
             'hdr': pygame.font.SysFont(font, F_HDR),
         }
 
-    icon = pygame.image.load('assets/images/thumbnail.png')
+    icon = pygame.image.load(_paths.asset('assets/images/thumbnail.png'))
     pygame.display.set_icon(icon)
     display = pygame.display.set_mode((W, H))
     screen  = pygame.Surface((W, H))
     pygame.display.set_caption('OpenAVS')
 
-    ports  = _load_ports('data/ports.json')
+    ports  = _load_ports(_paths.asset('data/ports.json'))
 
 
     # ── back-button rect (bottom of sidebar, computed once) ───────────────────

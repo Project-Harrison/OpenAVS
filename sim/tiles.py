@@ -4,13 +4,13 @@ import shapefile
 import pygame
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from . import paths as _paths
 
-CACHE_DIR  = 'assets/tile_cache'
 SEA_URL    = 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png'
 CARTO_URL  = 'https://a.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png'
 HEADERS    = {'User-Agent': 'ShipSimulator/1.0 (MSTEM Capstone - educational)'}
 TIMEOUT    = 8
-SHP_PATH   = 'assets/shapefiles/World/goas_v01.shp'
+_SHP_PATH  = 'assets/shapefiles/World/goas_v01.shp'
 
 SEA_COLOR     = (168, 204, 222)
 LAND_COLOR    = (228, 224, 182)
@@ -40,7 +40,7 @@ def _draw_shapefile(surf, origin, ox, oy, ns, chart_w, chart_h):
     surf.fill(LAND_COLOR)  # background = land; ocean polygons painted on top
 
     try:
-        sf = shapefile.Reader(SHP_PATH)
+        sf = shapefile.Reader(_paths.asset(_SHP_PATH))
     except Exception as e:
         print(f'  shapefile load failed: {e}')
         surf.fill(SEA_COLOR)
@@ -87,11 +87,11 @@ def _draw_shapefile(surf, origin, ox, oy, ns, chart_w, chart_h):
 
 
 def _cache_path(z, tx, ty):
-    return os.path.join(CACHE_DIR, f'sea_{z}_{tx}_{ty}.png')
+    return os.path.join(_paths.tile_cache_dir(), f'sea_{z}_{tx}_{ty}.png')
 
 
 def _carto_cache_path(z, tx, ty):
-    return os.path.join(CACHE_DIR, f'carto_{z}_{tx}_{ty}.png')
+    return os.path.join(_paths.tile_cache_dir(), f'carto_{z}_{tx}_{ty}.png')
 
 
 def _download(z, tx, ty):
@@ -148,7 +148,7 @@ def _load_carto(z, tx, ty):
 
 def _draw_coastlines(surf, origin, ox, oy, ns, chart_w, chart_h):
     try:
-        sf = shapefile.Reader(SHP_PATH)
+        sf = shapefile.Reader(_paths.asset(_SHP_PATH))
     except Exception as e:
         print(f'  coastline outlines failed: {e}')
         return
@@ -188,7 +188,7 @@ def build_background(origin, chart_w, chart_h, ox, oy, ns, zoom,
         if progress_cb:
             progress_cb(msg, pct)
 
-    os.makedirs(CACHE_DIR, exist_ok=True)
+    _paths.tile_cache_dir()  # ensure writable cache dir exists
     surf = pygame.Surface((chart_w, chart_h))
 
     notify('Rendering chart…', 0.02)

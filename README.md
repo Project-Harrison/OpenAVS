@@ -59,6 +59,65 @@ uv run python main.py
 
 ---
 
+## macOS Distribution (DMG)
+
+A self-contained `OpenAVS.app` and installer DMG can be built with a single script. No Python installation is required on the target Mac.
+
+### Build
+
+```bash
+bash build_mac.sh
+```
+
+This will:
+
+1. Install PyInstaller into the project virtualenv
+2. Convert `assets/images/thumbnail.png` → `assets/images/OpenAVS.icns` (app icon)
+3. Bundle the app — Python runtime, all dependencies, the shapefile, ports database, and images — into `dist/OpenAVS.app`
+4. Compress it into `dist/OpenAVS.dmg` (~116 MB)
+
+### Output
+
+| File | Size | Description |
+|---|---|---|
+| `dist/OpenAVS.app` | ~179 MB | Standalone macOS app bundle |
+| `dist/OpenAVS.dmg` | ~116 MB | Compressed disk image for distribution |
+
+### Installing on another Mac
+
+1. Double-click `OpenAVS.dmg` and drag `OpenAVS.app` to Applications
+2. **First launch only:** right-click → **Open** to bypass the Gatekeeper warning (the app is unsigned — no Apple Developer certificate)
+3. Subsequent launches work normally from Spotlight or the Dock
+
+### AIS key for bundled app
+
+The app cannot read environment variables or `.env` files when launched from the Dock. Create a config file once:
+
+```
+~/Library/Application Support/OpenAVS/config.json
+```
+
+```json
+{ "SAURAHBN_AIS": "your_key_here" }
+```
+
+The app checks this file at startup. Without it, the simulation runs without live AIS — autonomous vessels will not appear.
+
+### Writable data (tile cache, vessel stream)
+
+The `.app` bundle is read-only. All runtime writes go to:
+
+```
+~/Library/Application Support/OpenAVS/
+├── tile_cache/      # downloaded map tiles — persists between runs
+├── database/stream  # per-run vessel state CSV — cleared on startup
+└── config.json      # API key (user-created)
+```
+
+Tile cache persists across app updates, so previously visited ports load instantly.
+
+---
+
 ## Startup Flow
 
 ### 1 — Port Selection Screen

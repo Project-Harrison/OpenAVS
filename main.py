@@ -1,7 +1,8 @@
 from sim import autonomous, interface, behavior, supporting
+from sim.paths import stream_path
 
 # Clear stream database so each run starts fresh
-open('database/stream', 'w').close()
+open(stream_path(), 'w').close()
 
 
 def make_sim(origin):
