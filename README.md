@@ -2,6 +2,12 @@
 
 [projectharrison.org](https://www.projectharrison.org/) &nbsp;·&nbsp; [saurabhn.com](https://saurabhn.com/)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Project-Harrison/OpenAVS/blob/main/LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![pygame-ce](https://img.shields.io/badge/pygame--ce-2.5.7+-brightgreen)](https://pypi.org/project/pygame-ce/)
+[![GitHub stars](https://img.shields.io/github/stars/Project-Harrison/OpenAVS?style=social)](https://github.com/Project-Harrison/OpenAVS/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Project-Harrison/OpenAVS?style=social)](https://github.com/Project-Harrison/OpenAVS/network/members)
+
 ![OpenAVS](assets/images/graphic.png)
 
 ## Scope and limitations
